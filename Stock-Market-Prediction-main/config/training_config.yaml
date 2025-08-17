@@ -1,0 +1,99 @@
+# Training configuration for Stock Market Prediction with LightGBM
+
+# Experiment tracking
+experiment_name: "stock_prediction_lightgbm_benchmark"
+
+# Data configuration
+data_path: "data/RELIANCE.NS.csv"
+processed_data_path: "data/processed_stock_data.csv"
+target_column: "Close"
+train_ratio: 0.8
+
+# LSTM Model configuration
+sequence_length: 60
+n_features: 1
+epochs: 100
+batch_size: 32
+
+# Random Forest configuration
+rf_n_estimators: 100
+rf_max_depth: null  # null for unlimited depth
+rf_random_state: 42
+
+# XGBoost configuration
+xgb_n_estimators: 100
+xgb_max_depth: 6
+xgb_learning_rate: 0.1
+xgb_random_state: 42
+
+# LightGBM configuration
+lightgbm:
+  n_estimators: 200
+  max_depth: 8
+  learning_rate: 0.05
+  random_state: 42
+  num_leaves: 31
+  min_child_samples: 20
+  subsample: 0.8
+  colsample_bytree: 0.8
+  reg_alpha: 0.1
+  reg_lambda: 0.1
+  min_split_gain: 0.0
+  boosting_type: "gbdt"
+  objective: "regression"
+  metric: "rmse"
+  early_stopping_rounds: 50
+  verbose: -1
+
+# General configuration
+random_state: 42
+
+# Model saving paths
+model_path: "models/best_model.h5"
+lightgbm_model_path: "models/lightgbm_model.joblib"
+xgb_model_path: "models/xgboost_model.joblib"
+rf_model_path: "models/random_forest_model.joblib"
+lr_model_path: "models/linear_regression_model.joblib"
+
+# Output directories
+output_dir: "outputs"
+plots_dir: "plots"
+results_dir: "results"
+
+# MLflow configuration
+mlflow_tracking_uri: "mlruns"
+
+# Feature engineering configuration
+features:
+  # Technical indicators
+  rsi_period: 14
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  bb_period: 20
+  bb_std: 2
+  
+  # Moving averages
+  ma_periods: [5, 10, 20, 50]
+  
+  # Volatility periods
+  volatility_periods: [5, 10, 20]
+  
+  # Lag features
+  lag_periods: [1, 2, 3, 5, 10]
+  
+  # Rolling statistics
+  rolling_periods: [5, 10, 20]
+
+# Cross-validation configuration
+cross_validation:
+  n_splits: 5
+  shuffle: false
+  random_state: 42
+
+# Hyperparameter tuning
+hyperparameter_tuning:
+  enable: true
+  method: "grid_search"  # or "random_search", "bayesian"
+  n_trials: 50
+  cv_folds: 3 
