@@ -1,0 +1,220 @@
+# Production Configuration for Stock Market Prediction System
+# This file contains production-ready settings optimized for deployment
+
+# Application Settings
+app:
+  name: "Stock Market Prediction"
+  version: "1.0.0"
+  environment: "production"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8000
+
+# Data Configuration
+data:
+  path: "/app/data/stock_data.csv"
+  processed_data_path: "/app/data/processed_stock_data.csv"
+  backup_enabled: true
+  backup_retention_days: 30
+  data_validation:
+    strict_mode: true
+    max_missing_values: 0.05
+    outlier_detection: true
+
+# Model Configuration
+models:
+  # Model storage paths
+  lightgbm_model_path: "/app/models/lightgbm_model.joblib"
+  xgb_model_path: "/app/models/xgboost_model.joblib"
+  rf_model_path: "/app/models/random_forest_model.joblib"
+  lr_model_path: "/app/models/linear_regression_model.joblib"
+  
+  # Model loading
+  auto_load_models: true
+  model_validation: true
+  model_versioning: true
+  
+  # Prediction settings
+  batch_size: 1000
+  prediction_timeout: 30
+  cache_predictions: true
+  cache_ttl: 3600
+
+# Cross-Validation Settings (Production)
+cross_validation:
+  n_splits: 5
+  test_size: null  # Auto-calculate based on data size
+  gap: 0
+  min_train_size: 100
+  shuffle: false  # Never shuffle time series data
+  validation_strategy: "walk_forward"
+
+# LightGBM Configuration (Production)
+lightgbm:
+  n_estimators: 200
+  max_depth: 8
+  learning_rate: 0.05
+  random_state: 42
+  num_leaves: 31
+  min_child_samples: 20
+  subsample: 0.8
+  colsample_bytree: 0.8
+  reg_alpha: 0.1
+  reg_lambda: 0.1
+  min_split_gain: 0.0
+  boosting_type: "gbdt"
+  objective: "regression"
+  metric: "rmse"
+  early_stopping_rounds: 50
+  verbose: -1
+  n_jobs: -1  # Use all available cores
+
+# XGBoost Configuration (Production)
+xgb_n_estimators: 100
+xgb_max_depth: 6
+xgb_learning_rate: 0.1
+xgb_random_state: 42
+xgb_early_stopping_rounds: 50
+xgb_eval_metric: "rmse"
+xgb_n_jobs: -1
+
+# Random Forest Configuration (Production)
+rf_n_estimators: 100
+rf_max_depth: null  # Unlimited depth for production
+rf_random_state: 42
+rf_n_jobs: -1
+rf_bootstrap: true
+rf_oob_score: true
+
+# Linear Regression Configuration
+linear_regression:
+  fit_intercept: true
+  normalize: false  # We handle normalization ourselves
+  copy_X: true
+  n_jobs: -1
+
+# LSTM Configuration
+lstm:
+  sequence_length: 10
+  n_features: 30
+  target_column: "Close"
+  train_ratio: 0.8
+  epochs: 100
+  batch_size: 32
+  model_path: "/app/models/lstm_model.h5"
+
+# MLflow Configuration
+mlflow:
+  tracking_uri: "sqlite:///mlflow.db"
+  experiment_name: "stock_prediction_production"
+  model_registry_uri: "sqlite:///mlflow.db"
+  artifact_store: "/app/mlflow"
+  log_models: true
+  log_artifacts: true
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "/app/logs/app.log"
+  max_file_size: "100MB"
+  backup_count: 5
+  json_format: true  # Structured logging for production
+
+# Security Configuration
+security:
+  cors_enabled: true
+  allowed_origins: ["*"]  # Configure based on your domain
+  rate_limiting: true
+  max_requests_per_minute: 1000
+  api_key_required: false  # Enable for production
+  ssl_required: true
+
+# Performance Configuration
+performance:
+  worker_processes: 4
+  worker_class: "uvicorn.workers.UvicornWorker"
+  max_requests: 1000
+  max_requests_jitter: 100
+  timeout: 30
+  keepalive: 2
+  preload_app: true
+
+# Monitoring Configuration
+monitoring:
+  health_check_enabled: true
+  health_check_interval: 30
+  metrics_enabled: true
+  prometheus_enabled: true
+  alerting_enabled: true
+  
+  # Performance thresholds
+  max_response_time: 5.0  # seconds
+  max_memory_usage: 80    # percentage
+  max_cpu_usage: 80       # percentage
+
+# Caching Configuration
+caching:
+  enabled: true
+  backend: "redis"  # or "memory"
+  redis_url: "redis://redis:6379/0"
+  default_ttl: 3600  # seconds
+  max_size: 1000     # maximum cache entries
+
+# Database Configuration (if using external database)
+database:
+  enabled: false
+  type: "postgresql"
+  host: "postgres"
+  port: 5432
+  name: "stock_prediction"
+  user: "app_user"
+  password: "secure_password"
+  pool_size: 10
+  max_overflow: 20
+
+# Feature Engineering Configuration
+features:
+  technical_indicators: true
+  moving_averages: [5, 10, 20, 50]
+  volatility_windows: [5, 10, 20]
+  lag_features: [1, 2, 3, 5, 10]
+  rolling_statistics: true
+  time_features: true
+  volume_features: true
+  
+  # Feature selection
+  feature_selection_enabled: true
+  min_feature_importance: 0.01
+  max_features: 100
+
+# Model Evaluation Configuration
+evaluation:
+  metrics: ["mse", "mae", "r2", "rmse"]
+  cross_validation_folds: 5
+  test_size: 0.2
+  validation_split: 0.2
+  early_stopping_patience: 10
+  
+  # Thresholds for production deployment
+  min_r2_score: 0.6
+  max_rmse_threshold: 0.5
+  stability_threshold: 0.2  # Coefficient of variation
+
+# Deployment Configuration
+deployment:
+  environment: "production"
+  region: "us-east-1"
+  instance_type: "t3.medium"
+  auto_scaling: true
+  min_instances: 2
+  max_instances: 10
+  health_check_path: "/health"
+  readiness_probe_path: "/ready"
+  
+  # Rollback settings
+  rollback_enabled: true
+  rollback_threshold: 0.1  # 10% error rate triggers rollback
+  canary_deployment: true
+  canary_percentage: 10

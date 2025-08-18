@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # Main application
+  stock-prediction:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - STOCK_PREDICTION_CONFIG=/app/config/training_config.yaml
+      - MLFLOW_TRACKING_URI=sqlite:///mlflow.db
+      - PYTHONPATH=/app
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./mlflow:/app/mlflow
+    depends_on:
+      - mlflow
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MLflow tracking server
+  mlflow:
+    image: python:3.10-slim
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=sqlite:///mlflow.db
+    volumes:
+      - ./mlflow:/mlflow
+    working_dir: /mlflow
+    command: >
+      bash -c "pip install mlflow &&
+                mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db"
+
+  # Streamlit dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - STOCK_PREDICTION_CONFIG=/app/config/training_config.yaml
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    depends_on:
+      - stock-prediction
+
+  # Jupyter notebook for development
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - STOCK_PREDICTION_CONFIG=/app/config/training_config.yaml
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./data:/app/data
+      - ./models:/app/models
+    working_dir: /app/notebooks
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  # PostgreSQL for production data (optional)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=stock_prediction
+      - POSTGRES_USER=app_user
+      - POSTGRES_PASSWORD=secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d stock_prediction"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+  postgres_data:
+
+networks:
+  default:
+    name: stock_prediction_network
